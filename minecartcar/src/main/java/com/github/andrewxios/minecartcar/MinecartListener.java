@@ -1,7 +1,10 @@
+
 package com.github.andrewxios.minecartcar;
 
 import org.bukkit.entity.Minecart;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -18,33 +21,44 @@ public class MinecartListener implements Listener {
 	public void onEnterMinecart(PlayerInteractEntityEvent event){
 		if(event.getRightClicked() instanceof Minecart){
 			mCart = (Minecart) event.getRightClicked();
+			
 		}
 		
 	}
 	
-	Vector heading;
+	Vector heading, tmpheading = new Vector(0,0,0);
 	boolean isBreakState = false;
 	
 	@EventHandler
 	public void onDriveEvent(PlayerMoveEvent event){
-		if(event.getPlayer().isInsideVehicle() &&
-				event.getPlayer().getVehicle() == mCart){
-		 heading = event.getPlayer().getLocation().getDirection();
-		 heading.setY(0); //ignore y velocity
-		 
+		Player player = event.getPlayer();
+		if(player.isInsideVehicle() &&
+				player.getVehicle() == mCart){
+		 heading = player.getLocation().getDirection();
+		 heading.setY(0); //ignore y
 		 if(!isBreakState){
-			 mCart.setVelocity(heading);
+			 if((mCart.getLocation().getDirection().angle(player.getLocation().getDirection().setY(0)) < 0.7) ||
+					 (mCart.getLocation().getDirection().angle(player.getLocation().getDirection().setY(0)) > 5.6)){
+				 mCart.setVelocity(heading);
+			 }
+			 else{
+				 mCart.setVelocity(tmpheading);
+			 }
+			 
 		 }
 		 else{
 			 mCart.setVelocity(new Vector(0,0,0)); 
 		 }
-		 
+		 tmpheading = heading;
 		}
+		
 	}
 	
-	@EventHandler void onBreakEvent(PlayerInteractEvent event){
+	@EventHandler(priority=EventPriority.HIGH)
+	void onBreakEvent(PlayerInteractEvent event){
 		if(event.getPlayer().getVehicle() == mCart){
-			if(event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK ){
+			if(event.getAction() == Action.RIGHT_CLICK_AIR || 
+					event.getAction() == Action.RIGHT_CLICK_BLOCK ){
 				isBreakState = !isBreakState;
 			}
 		}
